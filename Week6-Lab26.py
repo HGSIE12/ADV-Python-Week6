@@ -1,49 +1,51 @@
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 import seaborn as sns
+import matplotlib.pyplot as plt
 
-# 1) Load regression dataset
+# 1) Load dataset
 df = pd.read_csv("day26_distributions.csv")
-print("Original Data:")
-print(df)
-
-#2) Plot histograms and KDEs
-
-plt.figure(figsize=(6, 4))
-df["income"].hist(bins=30, edgecolor="black")
-plt.title("Income Distribution — Histogram")
-plt.xlabel("Income"); plt.ylabel("Count")
-plt.tight_layout(); plt.show()
-
-plt.figure(figsize=(6, 4))
-sns.kdeplot(df["income"], fill=True)
-plt.title("Income Distribution — KDE")
-plt.xlabel("Income"); plt.ylabel("Density")
-plt.tight_layout(); plt.show()
-
-#3) Compute mean, median, std, skew
 numeric_df = df.select_dtypes(include=np.number)
-stats = pd.DataFrame({
+
+# 2) Plot histogram + KDE for each numeric column
+for i in numeric_df.columns:
+    plt.figure(figsize=(6, 4))
+
+    sns.histplot(numeric_df[i], bins=30, kde=True)
+
+    mean_v = numeric_df[i].mean()
+    median_v = numeric_df[i].median()
+
+    plt.title(f"{i} Distribution")
+    plt.xlabel(i)
+    plt.ylabel("Frequency")
+    plt.legend()
+    plt.show()
+
+# 3) Compute summary statistics
+de = pd.DataFrame({
     "mean": numeric_df.mean(),
     "median": numeric_df.median(),
     "std": numeric_df.std(),
     "skew": numeric_df.skew()
 })
 
-print("Summary Statistics:")
-print(stats)
+print("\nSummary Statistics:")
+print(de)
 
 # 4) Apply log1p to most skewed feature
-skewed_feature = stats["skew"].abs().sort_values(ascending=False).index[0]
-print("Most Skewed Feature:", skewed_feature)
+skewed = de["skew"].abs().sort_values(ascending=False).index[0]
+print("\nMost Skewed Feature:", skewed)
 
-df[skewed_feature + "_log"] = np.log1p(df[skewed_feature])
+df[skewed + "_log"] = np.log1p(df[skewed])
 
-# Replot after transformation
-plt.figure(figsize=(6,4))
-sns.kdeplot(df[skewed_feature], label="Original", fill=True)
-sns.kdeplot(df[skewed_feature + "_log"], label="Log1p", fill=True)
+# Replot before and after
+plt.figure(figsize=(6, 4))
+sns.kdeplot(df[skewed], label="Original", fill=True)
+sns.kdeplot(df[skewed + "_log"], label="Log1p", fill=True)
+
+plt.title(f"Effect of log1p on {skewed}")
+plt.xlabel("skewed_feature")
+plt.ylabel("Density")
 plt.legend()
-plt.title(f"Before vs After log1p ({skewed_feature})")
 plt.show()
